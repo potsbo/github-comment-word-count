@@ -23,11 +23,12 @@ func main() {
 	}
 
 	month := "09"
+	nextMonth := "10"
 	year := "2018"
 	username := "potsbo"
 	org := "wantedly"
 
-	query := fmt.Sprintf("org:%s involves:%s updated:>%s-%s-01", org, username, year, month)
+	query := fmt.Sprintf("org:%s involves:%s updated:>%s-%s-01 created:<%s-%s-01", org, username, year, month, year, nextMonth)
 
 	issues, err := getAllIssues(query, client)
 	if err != nil {
@@ -40,7 +41,7 @@ func main() {
 		if i%10 == 0 {
 			fmt.Printf("%d/%d\n", i+1, len(issues))
 		}
-		size, err := getComment(issue, client, username)
+		size, err := getComment(issue, client, username, year, month)
 		if err != nil {
 			panic(err)
 		}
@@ -84,7 +85,7 @@ func getAllIssues(query string, client *github.Client) ([]github.Issue, error) {
 	return issues, nil
 }
 
-func getComment(issue github.Issue, client *github.Client, username string) (int, error) {
+func getComment(issue github.Issue, client *github.Client, username, year, month string) (int, error) {
 	//TODO: filter by date
 	cnt := 0
 	if issue.GetUser().GetLogin() == username {
