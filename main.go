@@ -12,15 +12,23 @@ import (
 	"golang.org/x/oauth2"
 )
 
+const (
+	githubTokenKey = "GITHUB_ACCESS_TOKEN"
+)
+
 func main() {
-	accessToken := os.Getenv("GITHUB_ACCESS_TOKEN")
+	if err := countChars(); err != nil {
+		fmt.Printf("failed to count chars: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func countChars() error {
+	accessToken := os.Getenv(githubTokenKey)
 	if len(accessToken) == 0 {
-		return
+		return errors.Errorf("%s is missing", githubTokenKey)
 	}
-	client, err := getNewClient(accessToken)
-	if err != nil {
-		return
-	}
+	client := getNewClient(accessToken)
 
 	month := "09"
 	nextMonth := "10"
@@ -32,7 +40,7 @@ func main() {
 
 	issues, err := getAllIssues(query, client)
 	if err != nil {
-		panic(err)
+		return errors.Wrap(err, "failed list all issues")
 	}
 	fmt.Printf("%d issue(s) found\n", len(issues))
 
@@ -43,15 +51,15 @@ func main() {
 		}
 		size, err := getComment(issue, client, username, year, month)
 		if err != nil {
-			panic(err)
+			return errors.Wrap(err, "failed to count chars on an issue")
 		}
 		cnt += size
 	}
 	fmt.Printf("%d char(s) written by %s\n", cnt, username)
-	return
+	return nil
 }
 
-func getNewClient(accessToken string) (*github.Client, error) {
+func getNewClient(accessToken string) *github.Client {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(&oauth2.Token{
 		AccessToken: accessToken,
@@ -60,7 +68,7 @@ func getNewClient(accessToken string) (*github.Client, error) {
 
 	client := github.NewClient(tc)
 
-	return client, nil
+	return client
 }
 
 func getAllIssues(query string, client *github.Client) ([]github.Issue, error) {
